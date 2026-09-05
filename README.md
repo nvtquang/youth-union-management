@@ -13,6 +13,7 @@ Backend skeleton for the Ho Chi Minh Communist Youth Union member management sys
 | content-service | 8084 |
 | chat-service | 8085 |
 | notification-service | 8086 |
+| audit-service | 8087 |
 
 ## Build
 
@@ -30,6 +31,7 @@ mvn -pl event-service spring-boot:run
 mvn -pl content-service spring-boot:run
 mvn -pl chat-service spring-boot:run
 mvn -pl notification-service spring-boot:run
+mvn -pl audit-service spring-boot:run
 ```
 
 ## Health Checks

@@ -73,6 +73,14 @@ spring:
             - Path=/api/notifications/**
           filters:
             - RewritePath=/api/notifications/(?<segment>.*), /api/$\{segment}
+        - id: audit-service
+          uri: ${AUDIT_SERVICE_URL:http://localhost:8087}
+          predicates:
+            - Path=/api/audit-logs,/api/audit-logs/**
+
+auth:
+  jwt:
+    secret: ${AUTH_JWT_SECRET:dev-only-hcmcyu-auth-service-secret-key-change-me-please-32}
 
 management:
   endpoints:

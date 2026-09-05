@@ -16,10 +16,15 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  flyway:
+    enabled: true
+
+auth:
+  jwt:
+    secret: ${JWT_SECRET:dev-hcmcyu-chat-service-secret-key-change-me-please-32}
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info
-

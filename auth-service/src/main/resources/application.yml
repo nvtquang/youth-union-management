@@ -26,6 +26,8 @@ management:
         include: health,info
 
 auth:
+  internal:
+    secret: ${AUTH_INTERNAL_SECRET:dev-internal-secret}
   jwt:
     secret: ${AUTH_JWT_SECRET:dev-only-hcmcyu-auth-service-secret-key-change-me-please-32}
     access-token-expiration-ms: ${AUTH_ACCESS_TOKEN_EXPIRATION_MS:900000}

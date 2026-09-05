@@ -33,7 +33,7 @@ public class GatewayErrorWebExceptionHandler implements ErrorWebExceptionHandler
         GatewayErrorResponse errorResponse = new GatewayErrorResponse(
                 OffsetDateTime.now(),
                 status.value(),
-                resolveCode(status),
+                resolveCode(exception, status),
                 resolveMessage(exception, status),
                 exchange.getRequest().getURI().getRawPath()
         );
@@ -53,8 +53,15 @@ public class GatewayErrorWebExceptionHandler implements ErrorWebExceptionHandler
         return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 
-    private String resolveCode(HttpStatus status) {
+    private String resolveCode(Throwable exception, HttpStatus status) {
+        if (status == HttpStatus.UNAUTHORIZED
+                && exception instanceof ResponseStatusException responseStatusException
+                && responseStatusException.getReason() != null) {
+            return responseStatusException.getReason();
+        }
         return switch (status) {
+            case UNAUTHORIZED -> "UNAUTHORIZED";
+            case FORBIDDEN -> "FORBIDDEN";
             case NOT_FOUND -> "ROUTE_NOT_FOUND";
             case SERVICE_UNAVAILABLE -> "SERVICE_UNAVAILABLE";
             case GATEWAY_TIMEOUT -> "GATEWAY_TIMEOUT";
@@ -65,6 +72,10 @@ public class GatewayErrorWebExceptionHandler implements ErrorWebExceptionHandler
     private String resolveMessage(Throwable exception, HttpStatus status) {
         if (status.is5xxServerError()) {
             return "Gateway could not process the request";
+        }
+        if (exception instanceof ResponseStatusException responseStatusException
+                && responseStatusException.getReason() != null) {
+            return responseStatusException.getReason();
         }
         return exception.getMessage() == null ? status.getReasonPhrase() : exception.getMessage();
     }
@@ -77,4 +88,3 @@ public class GatewayErrorWebExceptionHandler implements ErrorWebExceptionHandler
         }
     }
 }
-

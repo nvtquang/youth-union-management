@@ -16,10 +16,24 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  flyway:
+    enabled: true
+
+storage:
+  local:
+    post-image-path: ${POST_IMAGE_STORAGE_PATH:storage/post-images}
+  post-image-public-url-prefix: ${POST_IMAGE_PUBLIC_URL_PREFIX:/uploads/post-images}
+  post-image:
+    max-size-bytes: ${POST_IMAGE_MAX_SIZE_BYTES:5242880}
+
+audit:
+  service:
+    url: ${AUDIT_SERVICE_URL:http://localhost:8087}
+  internal:
+    secret: ${AUDIT_INTERNAL_SECRET:dev-audit-internal-secret}
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info
-

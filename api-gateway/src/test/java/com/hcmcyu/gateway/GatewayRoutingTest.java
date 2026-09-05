@@ -2,9 +2,16 @@ package com.hcmcyu.gateway;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Date;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+import javax.crypto.SecretKey;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,12 +26,16 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class GatewayRoutingTest {
 
+    private static final String JWT_SECRET = "test-hcmcyu-gateway-secret-key-change-me-please-32";
+    private static final String WRONG_JWT_SECRET = "wrong-hcmcyu-gateway-secret-key-change-me-please-32";
+
     private static final MockWebServer AUTH_SERVICE = startMockServer();
     private static final MockWebServer MEMBER_SERVICE = startMockServer();
     private static final MockWebServer EVENT_SERVICE = startMockServer();
     private static final MockWebServer CONTENT_SERVICE = startMockServer();
     private static final MockWebServer CHAT_SERVICE = startMockServer();
     private static final MockWebServer NOTIFICATION_SERVICE = startMockServer();
+    private static final MockWebServer AUDIT_SERVICE = startMockServer();
 
     @LocalServerPort
     private int port;
@@ -41,6 +52,8 @@ class GatewayRoutingTest {
         registry.add("CHAT_SERVICE_URL", () -> CHAT_SERVICE.url("/").toString());
         registry.add("CHAT_SERVICE_WS_URL", () -> "ws://localhost:" + CHAT_SERVICE.getPort());
         registry.add("NOTIFICATION_SERVICE_URL", () -> NOTIFICATION_SERVICE.url("/").toString());
+        registry.add("AUDIT_SERVICE_URL", () -> AUDIT_SERVICE.url("/").toString());
+        registry.add("AUTH_JWT_SECRET", () -> JWT_SECRET);
     }
 
     @AfterAll
@@ -51,6 +64,7 @@ class GatewayRoutingTest {
         CONTENT_SERVICE.shutdown();
         CHAT_SERVICE.shutdown();
         NOTIFICATION_SERVICE.shutdown();
+        AUDIT_SERVICE.shutdown();
     }
 
     @Test
@@ -88,6 +102,129 @@ class GatewayRoutingTest {
     void exposesChatWebSocketRoute() {
         assertThat(routeLocator.getRoutes().map(Route::getId).collectList().block())
                 .contains("chat-service-websocket");
+    }
+
+    @Test
+    void routesAuditLogRequestsToAuditService() throws InterruptedException {
+        AUDIT_SERVICE.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody("{\"content\":[],\"totalElements\":0}"));
+
+        WebTestClient client = WebTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
+                .build();
+
+        client.get()
+                .uri("/api/audit-logs?page=0&size=10")
+                .header("Authorization", bearer("ward-secretary-user", null, "WARD_SECRETARY", "ward-thuong-cat", null))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.totalElements").isEqualTo(0);
+
+        RecordedRequest request = AUDIT_SERVICE.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/api/audit-logs?page=0&size=10");
+        assertThat(request.getHeader("X-User-Id")).isEqualTo("ward-secretary-user");
+        assertThat(request.getHeader("X-User-Role")).isEqualTo("WARD_SECRETARY");
+    }
+
+    @Test
+    void gatewayRejectsProtectedRequestsWithoutToken() {
+        WebTestClient client = WebTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
+                .build();
+
+        client.get()
+                .uri("/api/audit-logs")
+                .exchange()
+                .expectStatus().isUnauthorized()
+                .expectBody()
+                .jsonPath("$.code").isEqualTo("UNAUTHORIZED");
+    }
+
+    @Test
+    void gatewayRejectsInvalidTokenSignature() {
+        WebTestClient client = WebTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
+                .build();
+
+        client.get()
+                .uri("/api/members")
+                .header("Authorization", bearerWithSecret(
+                        WRONG_JWT_SECRET,
+                        "member-a-user",
+                        "member-a",
+                        "MEMBER",
+                        "ward-thuong-cat",
+                        "tdp-1"
+                ))
+                .exchange()
+                .expectStatus().isUnauthorized()
+                .expectBody()
+                .jsonPath("$.code").isEqualTo("INVALID_TOKEN");
+    }
+
+    @Test
+    void gatewayStripsSpoofedIdentityHeadersAndInjectsVerifiedJwtClaims() throws InterruptedException {
+        MEMBER_SERVICE.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody("{\"content\":[],\"totalElements\":0}"));
+
+        WebTestClient client = WebTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
+                .build();
+
+        client.get()
+                .uri("/api/members")
+                .header("Authorization", bearer("member-a-user", "member-a", "MEMBER", "ward-thuong-cat", "tdp-1"))
+                .header("X-User-Id", "forged-ward-secretary")
+                .header("X-User-Role", "WARD_SECRETARY")
+                .header("X-Tdp-Id", "tdp-2")
+                .exchange()
+                .expectStatus().isOk();
+
+        RecordedRequest request = MEMBER_SERVICE.takeRequest();
+        assertThat(request.getHeader("X-User-Id")).isEqualTo("member-a-user");
+        assertThat(request.getHeader("X-Member-Id")).isEqualTo("member-a");
+        assertThat(request.getHeader("X-User-Role")).isEqualTo("MEMBER");
+        assertThat(request.getHeader("X-Tdp-Id")).isEqualTo("tdp-1");
+    }
+
+    private static String bearer(
+            String userId,
+            String memberId,
+            String role,
+            String organizationId,
+            String tdpId
+    ) {
+        return bearerWithSecret(JWT_SECRET, userId, memberId, role, organizationId, tdpId);
+    }
+
+    private static String bearerWithSecret(
+            String secret,
+            String userId,
+            String memberId,
+            String role,
+            String organizationId,
+            String tdpId
+    ) {
+        SecretKey secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        Instant now = Instant.now();
+        return "Bearer " + Jwts.builder()
+                .subject(userId)
+                .claim("userId", userId)
+                .claim("memberId", memberId)
+                .claim("username", userId)
+                .claim("email", userId + "@example.com")
+                .claim("role", role)
+                .claim("organizationId", organizationId)
+                .claim("tdpId", tdpId)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusSeconds(900)))
+                .signWith(secretKey)
+                .compact();
     }
 
     private static MockWebServer startMockServer() {

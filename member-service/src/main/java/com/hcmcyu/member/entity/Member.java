@@ -48,6 +48,21 @@ public class Member {
     @Column(name = "avatar_url", length = 1000)
     private String avatarUrl;
 
+    @Column(name = "bank_name")
+    private String bankName;
+
+    @Column(name = "bank_code", length = 50)
+    private String bankCode;
+
+    @Column(name = "account_number", length = 50)
+    private String accountNumber;
+
+    @Column(name = "account_holder_name")
+    private String accountHolderName;
+
+    @Column(name = "bank_qr_image_url", length = 1000)
+    private String bankQrImageUrl;
+
     @Column(name = "youth_union_join_date")
     private LocalDate youthUnionJoinDate;
 
@@ -156,6 +171,46 @@ public class Member {
         this.avatarUrl = avatarUrl;
     }
 
+    public String getBankName() {
+        return bankName;
+    }
+
+    public void setBankName(String bankName) {
+        this.bankName = bankName;
+    }
+
+    public String getBankCode() {
+        return bankCode;
+    }
+
+    public void setBankCode(String bankCode) {
+        this.bankCode = bankCode;
+    }
+
+    public String getAccountNumber() {
+        return accountNumber;
+    }
+
+    public void setAccountNumber(String accountNumber) {
+        this.accountNumber = accountNumber;
+    }
+
+    public String getAccountHolderName() {
+        return accountHolderName;
+    }
+
+    public void setAccountHolderName(String accountHolderName) {
+        this.accountHolderName = accountHolderName;
+    }
+
+    public String getBankQrImageUrl() {
+        return bankQrImageUrl;
+    }
+
+    public void setBankQrImageUrl(String bankQrImageUrl) {
+        this.bankQrImageUrl = bankQrImageUrl;
+    }
+
     public LocalDate getYouthUnionJoinDate() {
         return youthUnionJoinDate;
     }
@@ -196,4 +251,3 @@ public class Member {
         return updatedAt;
     }
 }
-
