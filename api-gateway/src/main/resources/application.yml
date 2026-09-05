@@ -25,54 +25,82 @@ spring:
             allow-credentials: true
             max-age: 3600
       routes:
+        - id: auth-service-health
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/auth/health
+          filters:
+            - RewritePath=/api/auth/health, /api/health
         - id: auth-service
           uri: ${AUTH_SERVICE_URL:http://localhost:8081}
           predicates:
             - Path=/api/auth/**
+        - id: member-service-members-health
+          uri: ${MEMBER_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/members/health
           filters:
-            - RewritePath=/api/auth/(?<segment>.*), /api/$\{segment}
+            - RewritePath=/api/members/health, /api/health
         - id: member-service-members
           uri: ${MEMBER_SERVICE_URL:http://localhost:8082}
           predicates:
             - Path=/api/members/**
+        - id: member-service-organizations-health
+          uri: ${MEMBER_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/organizations/health
           filters:
-            - RewritePath=/api/members/(?<segment>.*), /api/$\{segment}
+            - RewritePath=/api/organizations/health, /api/health
         - id: member-service-organizations
           uri: ${MEMBER_SERVICE_URL:http://localhost:8082}
           predicates:
             - Path=/api/organizations/**
+        - id: event-service-health
+          uri: ${EVENT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/events/health
           filters:
-            - RewritePath=/api/organizations/(?<segment>.*), /api/$\{segment}
+            - RewritePath=/api/events/health, /api/health
         - id: event-service
           uri: ${EVENT_SERVICE_URL:http://localhost:8083}
           predicates:
             - Path=/api/events/**
+        - id: content-service-health
+          uri: ${CONTENT_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/posts/health
           filters:
-            - RewritePath=/api/events/(?<segment>.*), /api/$\{segment}
+            - RewritePath=/api/posts/health, /api/health
         - id: content-service
           uri: ${CONTENT_SERVICE_URL:http://localhost:8084}
           predicates:
             - Path=/api/posts/**
+        - id: chat-service-http-health
+          uri: ${CHAT_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/chat/health
           filters:
-            - RewritePath=/api/posts/(?<segment>.*), /api/$\{segment}
+            - RewritePath=/api/chat/health, /api/health
         - id: chat-service-http
           uri: ${CHAT_SERVICE_URL:http://localhost:8085}
           predicates:
             - Path=/api/chat/**
-          filters:
-            - RewritePath=/api/chat/(?<segment>.*), /api/$\{segment}
         - id: chat-service-websocket
           uri: ${CHAT_SERVICE_WS_URL:ws://localhost:8085}
           predicates:
             - Path=/ws/chat/**
           filters:
             - RewritePath=/ws/chat/(?<segment>.*), /ws/$\{segment}
+        - id: notification-service-health
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8086}
+          predicates:
+            - Path=/api/notifications/health
+          filters:
+            - RewritePath=/api/notifications/health, /api/health
         - id: notification-service
           uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8086}
           predicates:
             - Path=/api/notifications/**
-          filters:
-            - RewritePath=/api/notifications/(?<segment>.*), /api/$\{segment}
         - id: audit-service
           uri: ${AUDIT_SERVICE_URL:http://localhost:8087}
           predicates:

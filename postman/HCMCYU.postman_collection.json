@@ -1,0 +1,331 @@
+{
+  "info": {
+    "_postman_id": "3f1c7804-9d90-4bd4-b36f-73d042fb18d8",
+    "name": "HCMCYU Backend",
+    "description": "Development collection for HCMCYU backend through api-gateway. Import HCMCYU Local environment, run Auth/Login, then the accessToken is stored automatically. Protected requests use JWT Bearer. Validation and authorization failures return the shared ApiErrorResponse/GatewayErrorResponse shape.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Register/login/refresh/me. Register is public and always creates MEMBER; role is never accepted from clients.",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"demo.member.new\",\n  \"email\": \"demo.member.new@example.local\",\n  \"password\": \"Password@123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register",
+            "description": "Public registration. Expected response includes accessToken, refreshToken, tokenType, expiresIn."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.accessToken) pm.environment.set('accessToken', json.accessToken);",
+                  "if (json.refreshToken) pm.environment.set('refreshToken', json.refreshToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usernameOrEmail\": \"ward.secretary\",\n  \"password\": \"Demo@12345\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Successful login stores accessToken and refreshToken in the active Postman environment."
+          }
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/refresh"
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "Requires JWT Bearer."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Organizations",
+      "description": "Organization scope is enforced server-side; TDP officers can manage only their own TDP.",
+      "item": [
+        { "name": "List organizations", "request": { "method": "GET", "url": "{{baseUrl}}/api/organizations?page=0&size=20" } },
+        { "name": "Get organization", "request": { "method": "GET", "url": "{{baseUrl}}/api/organizations/{{organizationId}}" } },
+        {
+          "name": "Create organization",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Chi doan TDP demo\",\n  \"type\": \"TDP\",\n  \"parentId\": \"ward-thuong-cat\"\n}" },
+            "url": "{{baseUrl}}/api/organizations"
+          }
+        },
+        {
+          "name": "Update organization",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Chi doan TDP demo updated\",\n  \"type\": \"TDP\",\n  \"parentId\": \"ward-thuong-cat\"\n}" },
+            "url": "{{baseUrl}}/api/organizations/{{organizationId}}"
+          }
+        },
+        { "name": "Delete organization", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/organizations/{{organizationId}}" } },
+        { "name": "Organization members", "request": { "method": "GET", "url": "{{baseUrl}}/api/organizations/{{organizationId}}/members?page=0&size=20" } }
+      ]
+    },
+    {
+      "name": "Members",
+      "description": "CRUD member APIs. Banking/QR data is intentionally not returned by list/get member endpoints.",
+      "item": [
+        { "name": "List members", "request": { "method": "GET", "url": "{{baseUrl}}/api/members?keyword=&organizationId={{organizationId}}&page=0&size=20&sort=fullName,asc" } },
+        { "name": "Get member", "request": { "method": "GET", "url": "{{baseUrl}}/api/members/{{memberId}}" } },
+        {
+          "name": "Create member",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": \"demo-user-id\",\n  \"fullName\": \"Demo Member\",\n  \"dateOfBirth\": \"2005-01-01\",\n  \"gender\": \"OTHER\",\n  \"phone\": \"0900000000\",\n  \"email\": \"demo.member@example.local\",\n  \"address\": \"Thuong Cat\",\n  \"youthUnionJoinDate\": \"2022-03-26\",\n  \"organizationId\": \"{{organizationId}}\"\n}" },
+            "url": "{{baseUrl}}/api/members"
+          }
+        },
+        {
+          "name": "Update member",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"fullName\": \"Demo Member Updated\",\n  \"dateOfBirth\": \"2005-01-01\",\n  \"gender\": \"OTHER\",\n  \"phone\": \"0900000000\",\n  \"email\": \"demo.member@example.local\",\n  \"address\": \"Thuong Cat\",\n  \"youthUnionJoinDate\": \"2022-03-26\",\n  \"organizationId\": \"{{organizationId}}\"\n}" },
+            "url": "{{baseUrl}}/api/members/{{memberId}}"
+          }
+        },
+        {
+          "name": "Change role",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"TDP_SECRETARY\",\n  \"organizationId\": \"{{organizationId}}\"\n}" },
+            "url": "{{baseUrl}}/api/members/{{memberId}}/role",
+            "description": "Only WARD_SECRETARY can change role. WARD_DEPUTY_SECRETARY must receive 403."
+          }
+        },
+        { "name": "Disable member", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/members/{{memberId}}" } }
+      ]
+    },
+    {
+      "name": "Member Profile",
+      "description": "Self-service profile APIs. Members cannot mass-assign role, organizationId, status, joinDate, or permission fields.",
+      "item": [
+        { "name": "Get my profile", "request": { "method": "GET", "url": "{{baseUrl}}/api/members/me" } },
+        {
+          "name": "Update my profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"fullName\": \"Demo Member\",\n  \"dateOfBirth\": \"2005-01-01\",\n  \"gender\": \"OTHER\",\n  \"phone\": \"0900000000\",\n  \"email\": \"demo.member@example.local\",\n  \"address\": \"Thuong Cat\"\n}" },
+            "url": "{{baseUrl}}/api/members/me"
+          }
+        },
+        {
+          "name": "Upload avatar",
+          "request": {
+            "method": "POST",
+            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": [] }] },
+            "url": "{{baseUrl}}/api/members/me/avatar",
+            "description": "multipart/form-data. Allowed: jpg, jpeg, png, webp. Server generates storage filename."
+          }
+        },
+        { "name": "Delete avatar", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/members/me/avatar" } }
+      ]
+    },
+    {
+      "name": "Banking QR",
+      "description": "Personal banking metadata and QR image only. No payment service, no transaction processing.",
+      "item": [
+        { "name": "Get my banking", "request": { "method": "GET", "url": "{{baseUrl}}/api/members/me/banking" } },
+        {
+          "name": "Update my banking",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"bankName\": \"Demo Bank\",\n  \"bankCode\": \"DEMO\",\n  \"accountNumber\": \"0000000000\",\n  \"accountHolderName\": \"DEMO MEMBER\"\n}" },
+            "url": "{{baseUrl}}/api/members/me/banking"
+          }
+        },
+        {
+          "name": "Upload my banking QR",
+          "request": {
+            "method": "POST",
+            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": [] }] },
+            "url": "{{baseUrl}}/api/members/me/banking/qr"
+          }
+        },
+        { "name": "Delete my banking QR", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/members/me/banking/qr" } },
+        { "name": "Get member banking by scope", "request": { "method": "GET", "url": "{{baseUrl}}/api/members/{{memberId}}/banking" } }
+      ]
+    },
+    {
+      "name": "Events",
+      "description": "Event management scoped by ward/TDP role. Members can view events allowed by their scope.",
+      "item": [
+        { "name": "List events", "request": { "method": "GET", "url": "{{baseUrl}}/api/events?type=&organizationId={{organizationId}}&status=&upcoming=true&page=0&size=20" } },
+        { "name": "Get event", "request": { "method": "GET", "url": "{{baseUrl}}/api/events/{{eventId}}" } },
+        {
+          "name": "Create event",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Hop chi doan demo\",\n  \"description\": \"Demo event\",\n  \"type\": \"MEETING\",\n  \"location\": \"Nha van hoa\",\n  \"startTime\": \"2026-10-01T19:00:00\",\n  \"endTime\": \"2026-10-01T21:00:00\",\n  \"registrationDeadline\": \"2026-09-30T17:00:00\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"maxParticipants\": 50,\n  \"status\": \"PUBLISHED\"\n}" },
+            "url": "{{baseUrl}}/api/events"
+          }
+        },
+        {
+          "name": "Update event",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Hop chi doan demo updated\",\n  \"description\": \"Demo event\",\n  \"type\": \"MEETING\",\n  \"location\": \"Nha van hoa\",\n  \"startTime\": \"2026-10-01T19:00:00\",\n  \"endTime\": \"2026-10-01T21:00:00\",\n  \"registrationDeadline\": \"2026-09-30T17:00:00\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"maxParticipants\": 50,\n  \"status\": \"PUBLISHED\"\n}" },
+            "url": "{{baseUrl}}/api/events/{{eventId}}"
+          }
+        },
+        { "name": "Delete event", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/events/{{eventId}}" } }
+      ]
+    },
+    {
+      "name": "Participation",
+      "description": "A member votes only for self. One record per event/member; voting again updates. Deadline, capacity, and duplicate/race protections are server-side.",
+      "item": [
+        {
+          "name": "Vote participation",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"GOING\"\n}" },
+            "url": "{{baseUrl}}/api/events/{{eventId}}/participation"
+          }
+        },
+        { "name": "Participant list", "request": { "method": "GET", "url": "{{baseUrl}}/api/events/{{eventId}}/participants?page=0&size=20" } },
+        { "name": "Participation summary", "request": { "method": "GET", "url": "{{baseUrl}}/api/events/{{eventId}}/participation-summary" } },
+        { "name": "My events", "request": { "method": "GET", "url": "{{baseUrl}}/api/events/me?page=0&size=20" } }
+      ]
+    },
+    {
+      "name": "Posts",
+      "description": "Published posts are readable by members; post management and image upload are scoped by organization.",
+      "item": [
+        { "name": "List posts", "request": { "method": "GET", "url": "{{baseUrl}}/api/posts?organizationId={{organizationId}}&type=&page=0&size=20" } },
+        { "name": "Get post", "request": { "method": "GET", "url": "{{baseUrl}}/api/posts/{{postId}}" } },
+        {
+          "name": "Create post",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Bao cao demo\",\n  \"content\": \"Noi dung bao cao demo\",\n  \"type\": \"ACTIVITY_REPORT\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"status\": \"PUBLISHED\"\n}" },
+            "url": "{{baseUrl}}/api/posts"
+          }
+        },
+        {
+          "name": "Update post",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Bao cao demo updated\",\n  \"content\": \"Noi dung bao cao demo\",\n  \"type\": \"ACTIVITY_REPORT\",\n  \"organizationId\": \"{{organizationId}}\",\n  \"status\": \"PUBLISHED\"\n}" },
+            "url": "{{baseUrl}}/api/posts/{{postId}}"
+          }
+        },
+        {
+          "name": "Upload post images",
+          "request": {
+            "method": "POST",
+            "body": { "mode": "formdata", "formdata": [{ "key": "files", "type": "file", "src": [] }] },
+            "url": "{{baseUrl}}/api/posts/{{postId}}/images"
+          }
+        },
+        { "name": "Delete post image", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/posts/{{postId}}/images/{{imageId}}" } },
+        { "name": "Delete post", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/posts/{{postId}}" } }
+      ]
+    },
+    {
+      "name": "Chat",
+      "description": "REST conversation APIs plus WebSocket STOMP at /ws through chat-service. Sender is taken from JWT, not from client payload.",
+      "item": [
+        {
+          "name": "Create conversation",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"type\": \"GROUP\",\n  \"title\": \"Demo group\",\n  \"memberIds\": [\"{{memberId}}\"]\n}" },
+            "url": "{{baseUrl}}/api/chat/conversations"
+          }
+        },
+        { "name": "List conversations", "request": { "method": "GET", "url": "{{baseUrl}}/api/chat/conversations?page=0&size=20" } },
+        { "name": "Get conversation", "request": { "method": "GET", "url": "{{baseUrl}}/api/chat/conversations/{{conversationId}}" } },
+        { "name": "Message history", "request": { "method": "GET", "url": "{{baseUrl}}/api/chat/conversations/{{conversationId}}/messages?page=0&size=20" } },
+        {
+          "name": "Add conversation member",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"memberId\": \"{{memberId}}\"\n}" },
+            "url": "{{baseUrl}}/api/chat/conversations/{{conversationId}}/members"
+          }
+        },
+        { "name": "Remove conversation member", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/chat/conversations/{{conversationId}}/members/{{memberId}}" } }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "description": "Member can access only own notifications. Internal creation APIs are not included here.",
+      "item": [
+        { "name": "List notifications", "request": { "method": "GET", "url": "{{baseUrl}}/api/notifications?page=0&size=20" } },
+        { "name": "Unread count", "request": { "method": "GET", "url": "{{baseUrl}}/api/notifications/unread-count" } },
+        { "name": "Mark notification read", "request": { "method": "PUT", "url": "{{baseUrl}}/api/notifications/{{notificationId}}/read" } },
+        { "name": "Mark all read", "request": { "method": "PUT", "url": "{{baseUrl}}/api/notifications/read-all" } }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "description": "Aggregated dashboard API through api-gateway. It forwards verified JWT identity headers and does not include banking/QR data.",
+      "item": [
+        { "name": "Summary", "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/summary" } }
+      ]
+    }
+  ]
+}
