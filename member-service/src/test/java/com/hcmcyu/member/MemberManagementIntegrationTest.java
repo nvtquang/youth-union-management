@@ -198,6 +198,39 @@ class MemberManagementIntegrationTest {
     }
 
     @Test
+    void tdpDeputySecretaryCanCrudMemberInOwnTdpWithSameScopeAsTdpSecretary() throws Exception {
+        MvcResult result = mockMvc.perform(withTdpDeputySecretary(post("/api/members"), tdp1.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(memberPayload("Deputy Created", "deputy-created-user", tdp1.getId()))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.memberRole").value("MEMBER"))
+                .andExpect(jsonPath("$.organizationId").value(tdp1.getId()))
+                .andReturn();
+
+        String createdMemberId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(withTdpDeputySecretary(get("/api/members/{id}", createdMemberId), tdp1.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(createdMemberId));
+
+        mockMvc.perform(withTdpDeputySecretary(put("/api/members/{id}", createdMemberId), tdp1.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(memberPayload("Deputy Updated", "deputy-created-user", tdp1.getId()))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fullName").value("Deputy Updated"));
+
+        mockMvc.perform(withTdpDeputySecretary(get("/api/members/{id}", memberTdp2.getId()), tdp1.getId()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("OUT_OF_SCOPE"));
+
+        mockMvc.perform(withTdpDeputySecretary(delete("/api/members/{id}", createdMemberId), tdp1.getId()))
+                .andExpect(status().isNoContent());
+
+        assertThat(memberRepository.findById(createdMemberId).orElseThrow().getMemberStatus())
+                .isEqualTo(MemberStatus.INACTIVE);
+    }
+
+    @Test
     void memberCannotCrudOtherMembersButCanReadSelf() throws Exception {
         mockMvc.perform(withMember(get("/api/members/{id}", memberTdp1.getId()), memberTdp1.getId(), tdp1.getId()))
                 .andExpect(status().isOk())
@@ -321,6 +354,17 @@ class MemberManagementIntegrationTest {
         return request
                 .header("X-User-Id", "tdp-secretary-user")
                 .header("X-User-Role", "TDP_SECRETARY")
+                .header("X-Organization-Id", ward.getId())
+                .header("X-Tdp-Id", tdpId);
+    }
+
+    private MockHttpServletRequestBuilder withTdpDeputySecretary(
+            MockHttpServletRequestBuilder request,
+            String tdpId
+    ) {
+        return request
+                .header("X-User-Id", "tdp-deputy-secretary-user")
+                .header("X-User-Role", "TDP_DEPUTY_SECRETARY")
                 .header("X-Organization-Id", ward.getId())
                 .header("X-Tdp-Id", tdpId);
     }

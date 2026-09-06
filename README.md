@@ -101,6 +101,15 @@ Each backend module exposes OpenAPI JSON and Swagger UI:
 
 Swagger UI supports JWT Bearer authentication. Click `Authorize`, enter the access token returned by `POST /api/auth/login`, then call protected APIs. Request/response DTOs, Jakarta Validation constraints, JWT authentication, role/scope notes, and the common error response schema are documented in the generated specs.
 
+Swagger documentation covers:
+
+- endpoint path and HTTP method
+- endpoint description and role/scope requirement where applicable
+- request DTO and response DTO schemas inferred from controller signatures
+- Jakarta Validation constraints on request DTOs
+- shared error response schema
+- JWT Bearer authentication
+
 ## Postman
 
 Import these files:
@@ -117,7 +126,28 @@ baseUrl=http://localhost:8080
 accessToken=
 ```
 
-Run `Auth / Login` first. Its test script stores `accessToken` and `refreshToken` automatically from the response. The remaining requests call through `api-gateway` and use `Authorization: Bearer {{accessToken}}`.
+Collection folders:
+
+- Auth
+- Members
+- Organizations
+- Events
+- Participation
+- Posts
+- Chat
+- Notifications
+- Payments
+- Admin
+
+The `Payments` folder intentionally contains only Banking QR profile APIs. HCMCYU does not include a payment service, payment transaction processing, or payment gateway integration.
+
+Recommended test flow:
+
+1. Run `Auth / Register` to create a public MEMBER account, or skip this step and use a seeded demo account.
+2. Run `Auth / Login`; its test script stores `accessToken` automatically in the active environment.
+3. Call any protected API. Requests go through `api-gateway` and use `Authorization: Bearer {{accessToken}}`.
+
+The collection also defines helper variables such as `memberId`, `organizationId`, `eventId`, `postId`, `conversationId`, and `notificationId` at collection scope.
 
 ## Development Infrastructure
 

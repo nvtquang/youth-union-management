@@ -5,6 +5,11 @@ import com.hcmcyu.member.dto.OrganizationUnitRequest;
 import com.hcmcyu.member.dto.OrganizationUnitResponse;
 import com.hcmcyu.member.security.CurrentUser;
 import com.hcmcyu.member.service.OrganizationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -21,6 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/organizations")
+@Tag(name = "Organizations", description = "Ward and TDP organization unit APIs.")
+@SecurityRequirement(name = "bearerAuth")
+@ApiResponses({
+        @ApiResponse(responseCode = "400", description = "Validation error"),
+        @ApiResponse(responseCode = "401", description = "Missing or invalid JWT Bearer token"),
+        @ApiResponse(responseCode = "403", description = "Role or organization scope denied"),
+        @ApiResponse(responseCode = "404", description = "Organization not found")
+})
 public class OrganizationController {
 
     private final OrganizationService organizationService;
@@ -30,11 +43,13 @@ public class OrganizationController {
     }
 
     @GetMapping
+    @Operation(summary = "List organizations", description = "WARD officers can view the ward tree. TDP officers are scoped to their own TDP. MEMBER sees only allowed organization data.")
     public List<OrganizationUnitResponse> findAll(@AuthenticationPrincipal CurrentUser currentUser) {
         return organizationService.findAll(currentUser);
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get organization by id", description = "Enforces organization scope; TDP officers cannot access another TDP by id.")
     public OrganizationUnitResponse findById(
             @PathVariable("id") String id,
             @AuthenticationPrincipal CurrentUser currentUser
@@ -44,6 +59,7 @@ public class OrganizationController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Create organization", description = "Administrative endpoint. WARD scope is required for ward-wide organization changes.")
     public OrganizationUnitResponse create(
             @Valid @RequestBody OrganizationUnitRequest request,
             @AuthenticationPrincipal CurrentUser currentUser
@@ -52,6 +68,7 @@ public class OrganizationController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update organization", description = "Administrative endpoint with role and organization scope enforcement.")
     public OrganizationUnitResponse update(
             @PathVariable("id") String id,
             @Valid @RequestBody OrganizationUnitRequest request,
@@ -62,11 +79,13 @@ public class OrganizationController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Delete organization", description = "Administrative endpoint with role and organization scope enforcement.")
     public void delete(@PathVariable("id") String id, @AuthenticationPrincipal CurrentUser currentUser) {
         organizationService.delete(id, currentUser);
     }
 
     @GetMapping("/{id}/members")
+    @Operation(summary = "List members in organization", description = "Returns member summaries for an organization visible to the current user.")
     public List<MemberSummaryResponse> findMembers(
             @PathVariable("id") String id,
             @AuthenticationPrincipal CurrentUser currentUser

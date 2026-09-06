@@ -7,6 +7,11 @@ import com.hcmcyu.auth.dto.RegisterRequest;
 import com.hcmcyu.auth.dto.UserResponse;
 import com.hcmcyu.auth.security.AuthPrincipal;
 import com.hcmcyu.auth.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +24,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Auth", description = "Registration, login, refresh token, and current authenticated user APIs.")
+@ApiResponses({
+        @ApiResponse(responseCode = "400", description = "Validation error or malformed request"),
+        @ApiResponse(responseCode = "401", description = "Authentication failed or token is invalid"),
+        @ApiResponse(responseCode = "409", description = "Username or email already exists")
+})
 public class AuthController {
 
     private final AuthService authService;
@@ -29,23 +40,26 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Register member account", description = "Public endpoint. Creates a MEMBER account only; clients cannot submit or assign role.")
     public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
         return authService.register(request);
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Login", description = "Public endpoint. Returns accessToken and refreshToken when username/email and password are valid.")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
 
     @PostMapping("/refresh")
+    @Operation(summary = "Refresh access token", description = "Public endpoint. Consumes a valid refresh token and rotates it.")
     public AuthResponse refresh(@Valid @RequestBody RefreshRequest request) {
         return authService.refresh(request);
     }
 
     @GetMapping("/me")
+    @Operation(summary = "Get current user", description = "Requires JWT Bearer authentication.", security = @SecurityRequirement(name = "bearerAuth"))
     public UserResponse me(@AuthenticationPrincipal AuthPrincipal principal) {
         return authService.me(principal.userId());
     }
 }
-

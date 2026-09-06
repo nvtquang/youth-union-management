@@ -4,6 +4,7 @@ import com.hcmcyu.chat.dto.ChatMessageRequest;
 import com.hcmcyu.chat.dto.MessageResponse;
 import com.hcmcyu.chat.security.ChatPrincipal;
 import com.hcmcyu.chat.service.MessageService;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;
 import java.security.Principal;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -14,6 +15,7 @@ import org.springframework.validation.annotation.Validated;
 
 @Controller
 @Validated
+@Hidden
 public class ChatWebSocketController {
 
     private final MessageService messageService;

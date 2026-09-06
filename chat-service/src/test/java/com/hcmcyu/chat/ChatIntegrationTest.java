@@ -204,6 +204,32 @@ class ChatIntegrationTest {
     }
 
     @Test
+    void outsiderCannotSubscribeOrSendMessagesToConversation() throws Exception {
+        WebSocketStompClient stompClient = stompClient();
+
+        StompSession outsiderSession = connect(stompClient, "outsider");
+        BlockingQueue<MessageResponse> outsiderMessages = new ArrayBlockingQueue<>(1);
+        outsiderSession.subscribe(
+                "/topic/conversations/" + directConversation.getId(),
+                new MessageFrameHandler(outsiderMessages)
+        );
+        Thread.sleep(300);
+        assertThat(outsiderSession.isConnected()).isFalse();
+
+        outsiderSession = connect(stompClient, "outsider");
+        outsiderSession.send("/app/chat/" + directConversation.getId(), Map.of("content", "Blocked message"));
+        Thread.sleep(300);
+        assertThat(messageRepository.findAll()).isEmpty();
+
+        StompSession memberSession = connect(stompClient, "member-1");
+        memberSession.send("/app/chat/" + directConversation.getId(), Map.of("content", "Visible to members only"));
+
+        assertThat(outsiderMessages.poll(1, TimeUnit.SECONDS)).isNull();
+        assertThat(messageRepository.findAll()).hasSize(1);
+        assertThat(messageRepository.findAll().getFirst().getSenderId()).isEqualTo("member-1");
+    }
+
+    @Test
     void invalidMessageContentIsRejectedAndNotPersisted() throws Exception {
         WebSocketStompClient stompClient = stompClient();
 
@@ -261,6 +287,19 @@ class ChatIntegrationTest {
 
     private String json(Object value) throws Exception {
         return objectMapper.writeValueAsString(value);
+    }
+
+    private StompSession connect(WebSocketStompClient stompClient, String memberId) throws Exception {
+        StompHeaders connectHeaders = new StompHeaders();
+        connectHeaders.add(HttpHeaders.AUTHORIZATION, bearer(memberId));
+        return stompClient
+                .connectAsync(
+                        "ws://localhost:" + port + "/ws",
+                        new WebSocketHttpHeaders(),
+                        connectHeaders,
+                        new StompSessionHandlerAdapter() {}
+                )
+                .get(5, TimeUnit.SECONDS);
     }
 
     private WebSocketStompClient stompClient() {

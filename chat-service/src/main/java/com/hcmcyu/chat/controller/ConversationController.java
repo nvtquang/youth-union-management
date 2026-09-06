@@ -7,6 +7,11 @@ import com.hcmcyu.chat.dto.MessageResponse;
 import com.hcmcyu.chat.security.CurrentUser;
 import com.hcmcyu.chat.service.ConversationService;
 import com.hcmcyu.chat.service.MessageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -24,6 +29,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/chat/conversations")
+@Tag(name = "Chat", description = "Direct and group conversation REST APIs. WebSocket STOMP is available at /ws.")
+@SecurityRequirement(name = "bearerAuth")
+@ApiResponses({
+        @ApiResponse(responseCode = "400", description = "Validation error"),
+        @ApiResponse(responseCode = "401", description = "Missing or invalid JWT Bearer token"),
+        @ApiResponse(responseCode = "403", description = "Conversation membership denied"),
+        @ApiResponse(responseCode = "404", description = "Conversation not found"),
+        @ApiResponse(responseCode = "409", description = "Duplicate membership or invalid conversation state")
+})
 public class ConversationController {
 
     private final ConversationService conversationService;
@@ -36,6 +50,7 @@ public class ConversationController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Create conversation", description = "Creates DIRECT or GROUP conversation. The creator is taken from JWT identity.")
     public ConversationResponse create(
             @Valid @RequestBody ConversationCreateRequest request,
             @AuthenticationPrincipal CurrentUser currentUser
@@ -44,11 +59,13 @@ public class ConversationController {
     }
 
     @GetMapping
+    @Operation(summary = "List my conversations", description = "Returns conversations where the current member is a participant.")
     public List<ConversationResponse> findMine(@AuthenticationPrincipal CurrentUser currentUser) {
         return conversationService.findMine(currentUser);
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get conversation by id", description = "Only conversation members can access the conversation.")
     public ConversationResponse findById(
             @PathVariable("id") String id,
             @AuthenticationPrincipal CurrentUser currentUser
@@ -57,6 +74,7 @@ public class ConversationController {
     }
 
     @GetMapping("/{id}/messages")
+    @Operation(summary = "Get message history", description = "Paginated message history. Only conversation members can read messages.")
     public Page<MessageResponse> findMessages(
             @PathVariable("id") String id,
             Pageable pageable,
@@ -66,6 +84,7 @@ public class ConversationController {
     }
 
     @PostMapping("/{id}/members")
+    @Operation(summary = "Add member to group", description = "Adds a member to a group conversation when the current member is allowed to manage membership.")
     public ConversationResponse addMember(
             @PathVariable("id") String id,
             @Valid @RequestBody ConversationMemberRequest request,
@@ -76,6 +95,7 @@ public class ConversationController {
 
     @DeleteMapping("/{id}/members/{memberId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Remove member from group", description = "Removes a member from a group conversation when the current member is allowed to manage membership.")
     public void removeMember(
             @PathVariable("id") String id,
             @PathVariable("memberId") String memberId,
