@@ -1,0 +1,3 @@
+auth:
+  jwt:
+    secret: ${AUTH_JWT_SECRET}

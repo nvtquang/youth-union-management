@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+services:
+  auth:
+    url: ${AUTH_SERVICE_URL}
+    internal-secret: ${AUTH_INTERNAL_SECRET}
+
+storage:
+  local:
+    avatar-path: ${AVATAR_STORAGE_PATH}
+    bank-qr-path: ${BANK_QR_STORAGE_PATH}
+  public-url-prefix: ${AVATAR_PUBLIC_URL_PREFIX}
+  bank-qr-public-url-prefix: ${BANK_QR_PUBLIC_URL_PREFIX}
+
+audit:
+  service:
+    url: ${AUDIT_SERVICE_URL}
+  internal:
+    secret: ${AUDIT_INTERNAL_SECRET}

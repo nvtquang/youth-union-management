@@ -6,6 +6,7 @@ import com.hcmcyu.auth.repository.UserAccountRepository;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -15,17 +16,19 @@ import org.springframework.stereotype.Component;
 public class DevDataSeeder implements CommandLineRunner {
 
     private static final String WARD_ID = "ward-thuong-cat";
-    private static final String PASSWORD = "Demo@12345";
 
     private final UserAccountRepository userAccountRepository;
     private final PasswordEncoder passwordEncoder;
+    private final String demoPassword;
 
     public DevDataSeeder(
             UserAccountRepository userAccountRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            @Value("${app.dev.seed.ward-secretary.password:Demo@12345}") String demoPassword
     ) {
         this.userAccountRepository = userAccountRepository;
         this.passwordEncoder = passwordEncoder;
+        this.demoPassword = demoPassword;
     }
 
     @Override
@@ -43,7 +46,7 @@ public class DevDataSeeder implements CommandLineRunner {
         user.setId(demoUser.userId());
         user.setUsername(demoUser.username());
         user.setEmail(demoUser.email());
-        user.setPasswordHash(passwordEncoder.encode(PASSWORD));
+        user.setPasswordHash(passwordEncoder.encode(demoPassword));
         user.setRole(demoUser.role());
         user.setMemberId(demoUser.memberId());
         user.setOrganizationId(WARD_ID);

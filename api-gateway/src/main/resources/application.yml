@@ -9,8 +9,10 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowed-origins:
+            allowed-origin-patterns:
               - ${FRONTEND_URL:http://localhost:5173}
+              - http://localhost:*
+              - http://127.0.0.1:*
             allowed-methods:
               - GET
               - POST
@@ -85,6 +87,12 @@ spring:
           uri: ${CHAT_SERVICE_URL:http://localhost:8085}
           predicates:
             - Path=/api/chat/**
+        - id: chat-service-websocket-root
+          uri: ${CHAT_SERVICE_WS_URL:ws://localhost:8085}
+          predicates:
+            - Path=/ws/chat
+          filters:
+            - SetPath=/ws
         - id: chat-service-websocket
           uri: ${CHAT_SERVICE_WS_URL:ws://localhost:8085}
           predicates:

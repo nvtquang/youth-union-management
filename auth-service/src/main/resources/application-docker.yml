@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+auth:
+  internal:
+    secret: ${AUTH_INTERNAL_SECRET}
+  jwt:
+    secret: ${AUTH_JWT_SECRET}

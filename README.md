@@ -1,160 +1,246 @@
-# HCMCYU Backend Skeleton
+# HCMCYU
 
-Backend skeleton for the Ho Chi Minh Communist Youth Union member management system of Thuong Cat Ward.
+Backend va huong dan chay development cho he thong website quan ly doan vien Doan TNCS Ho Chi Minh Phuong Thuong Cat.
 
-## Modules
-
-| Module | Port |
-| --- | ---: |
-| api-gateway | 8080 |
-| auth-service | 8081 |
-| member-service | 8082 |
-| event-service | 8083 |
-| content-service | 8084 |
-| chat-service | 8085 |
-| notification-service | 8086 |
-| audit-service | 8087 |
-
-## Build
-
-```bash
-mvn clean test
-```
-
-## Run With Maven
-
-```bash
-mvn -pl api-gateway spring-boot:run
-mvn -pl auth-service spring-boot:run
-mvn -pl member-service spring-boot:run
-mvn -pl event-service spring-boot:run
-mvn -pl content-service spring-boot:run
-mvn -pl chat-service spring-boot:run
-mvn -pl notification-service spring-boot:run
-mvn -pl audit-service spring-boot:run
-```
-
-Run development seed data with the `dev` profile:
-
-```bash
-mvn -pl auth-service spring-boot:run -Dspring-boot.run.profiles=dev
-mvn -pl member-service spring-boot:run -Dspring-boot.run.profiles=dev
-mvn -pl event-service spring-boot:run -Dspring-boot.run.profiles=dev
-mvn -pl content-service spring-boot:run -Dspring-boot.run.profiles=dev
-mvn -pl chat-service spring-boot:run -Dspring-boot.run.profiles=dev
-mvn -pl notification-service spring-boot:run -Dspring-boot.run.profiles=dev
-```
-
-## Development Demo Accounts
-
-All demo accounts use this password:
+## Cau truc thu muc
 
 ```text
-Demo@12345
+D:\Java\HCMCYU            # Backend Spring Boot multi-module + docker-compose.yml
+D:\Java\HCMCYU-frontend   # Frontend React/Vite, duoc compose build tu ../HCMCYU-frontend
 ```
 
-| Role | Username |
-| --- | --- |
-| WARD_SECRETARY | ward.secretary |
-| WARD_DEPUTY_SECRETARY | ward.deputy |
-| TDP_SECRETARY | tdp1.secretary, tdp2.secretary, tdp3.secretary, tdp4.secretary, tdp5.secretary |
-| TDP_DEPUTY_SECRETARY | tdp1.deputy, tdp2.deputy, tdp3.deputy, tdp4.deputy, tdp5.deputy |
-| MEMBER | tdp1.member1 to tdp1.member5, ... , tdp5.member1 to tdp5.member5 |
+## Cong nghe
 
-Seed data is profile-scoped with `dev` and must not run in `prod`.
+- Backend: Java 21, Spring Boot 3.3, Spring Security, Spring Data JPA, Spring Cloud Gateway, WebSocket/STOMP, Maven
+- Frontend: React, Vite, TypeScript, React Router, Axios, TanStack Query
+- Database: MySQL 8.4
+- Runtime dev: Docker Compose
 
-## Health Checks
+## Service va port
 
-Each service exposes:
+| Service | Port mac dinh | Health |
+| --- | ---: | --- |
+| frontend | 5173 | `http://localhost:5173/health` |
+| api-gateway | 8080 | `http://localhost:8080/api/health` |
+| auth-service | 8081 | `http://localhost:8081/api/health` |
+| member-service | 8082 | `http://localhost:8082/api/health` |
+| event-service | 8083 | `http://localhost:8083/api/health` |
+| content-service | 8084 | `http://localhost:8084/api/health` |
+| chat-service | 8085 | `http://localhost:8085/api/health` |
+| notification-service | 8086 | `http://localhost:8086/api/health` |
+| audit-service | 8087 | `http://localhost:8087/api/health` |
+| mysql | 3306 | Docker healthcheck |
+
+API frontend nen goi qua gateway:
 
 ```text
-GET /api/health
+http://localhost:8080
 ```
 
-Gateway route examples:
+WebSocket chat qua gateway:
 
 ```text
-GET http://localhost:8080/api/health
-GET http://localhost:8080/api/auth/health
-GET http://localhost:8080/api/members/health
-GET http://localhost:8080/api/organizations/health
-GET http://localhost:8080/api/events/health
-GET http://localhost:8080/api/posts/health
-GET http://localhost:8080/api/chat/health
-GET http://localhost:8080/api/notifications/health
+ws://localhost:8080/ws/chat
 ```
 
-## OpenAPI / Swagger
+## Chay toan bo bang Docker Compose
 
-Each backend module exposes OpenAPI JSON and Swagger UI:
+Yeu cau:
 
-| Module | Swagger UI | OpenAPI JSON |
-| --- | --- | --- |
-| api-gateway | http://localhost:8080/swagger-ui.html | http://localhost:8080/v3/api-docs |
-| auth-service | http://localhost:8081/swagger-ui.html | http://localhost:8081/v3/api-docs |
-| member-service | http://localhost:8082/swagger-ui.html | http://localhost:8082/v3/api-docs |
-| event-service | http://localhost:8083/swagger-ui.html | http://localhost:8083/v3/api-docs |
-| content-service | http://localhost:8084/swagger-ui.html | http://localhost:8084/v3/api-docs |
-| chat-service | http://localhost:8085/swagger-ui.html | http://localhost:8085/v3/api-docs |
-| notification-service | http://localhost:8086/swagger-ui.html | http://localhost:8086/v3/api-docs |
-| audit-service | http://localhost:8087/swagger-ui.html | http://localhost:8087/v3/api-docs |
+- Docker Desktop dang chay
+- Frontend nam dung tai `D:\Java\HCMCYU-frontend`
+- Backend nam tai `D:\Java\HCMCYU`
 
-Swagger UI supports JWT Bearer authentication. Click `Authorize`, enter the access token returned by `POST /api/auth/login`, then call protected APIs. Request/response DTOs, Jakarta Validation constraints, JWT authentication, role/scope notes, and the common error response schema are documented in the generated specs.
+Tai folder backend:
 
-Swagger documentation covers:
+```powershell
+cd D:\Java\HCMCYU
+```
 
-- endpoint path and HTTP method
-- endpoint description and role/scope requirement where applicable
-- request DTO and response DTO schemas inferred from controller signatures
-- Jakarta Validation constraints on request DTOs
-- shared error response schema
-- JWT Bearer authentication
+Tao file `.env` tu template:
 
-## Postman
+```powershell
+Copy-Item .env.example .env
+```
 
-Import these files:
+Mo `.env` va thay cac gia tri `change-me`:
+
+```powershell
+notepad .env
+```
+
+Gia tri dev co the dung tren may local:
+
+```env
+MYSQL_ROOT_PASSWORD=123456
+DB_USERNAME=root
+DB_PASSWORD=123456
+AUTH_JWT_SECRET=HCMCYU-JWT-SECRET-2026-VERY-STRONG-KEY-123456789
+AUTH_INTERNAL_SECRET=HCMCYU-AUTH-INTERNAL-SECRET-2026
+AUDIT_INTERNAL_SECRET=HCMCYU-AUDIT-INTERNAL-SECRET-2026
+NOTIFICATION_INTERNAL_SECRET=HCMCYU-NOTIFICATION-INTERNAL-SECRET-2026
+DEV_WARD_SECRETARY_PASSWORD=Demo@12345
+```
+
+Neu may dang co MySQL/XAMPP dung port `3306`, doi trong `.env`:
+
+```env
+MYSQL_PORT=3307
+```
+
+Chay toan bo he thong:
+
+```powershell
+docker compose up --build
+```
+
+Hoac chay nen:
+
+```powershell
+docker compose up --build -d
+```
+
+Kiem tra trang thai:
+
+```powershell
+docker compose ps
+```
+
+Tat ca container nen o trang thai `healthy`, frontend co the mat vai giay dau de healthcheck sang `healthy`.
+
+## URL su dung
+
+- Frontend: `http://localhost:5173`
+- API Gateway: `http://localhost:8080`
+- Gateway health: `http://localhost:8080/api/health`
+- Swagger UI:
+  - `http://localhost:8081/swagger-ui/index.html`
+  - `http://localhost:8082/swagger-ui/index.html`
+  - `http://localhost:8083/swagger-ui/index.html`
+  - `http://localhost:8084/swagger-ui/index.html`
+  - `http://localhost:8085/swagger-ui/index.html`
+  - `http://localhost:8086/swagger-ui/index.html`
+  - `http://localhost:8087/swagger-ui/index.html`
+
+## Lenh kiem tra nhanh
+
+```powershell
+curl.exe -fsS http://localhost:8080/api/health
+curl.exe -fsS http://localhost:5173/health
+curl.exe -fsS http://localhost:8081/api/health
+curl.exe -fsS http://localhost:8082/api/health
+curl.exe -fsS http://localhost:8083/api/health
+curl.exe -fsS http://localhost:8084/api/health
+curl.exe -fsS http://localhost:8085/api/health
+curl.exe -fsS http://localhost:8086/api/health
+curl.exe -fsS http://localhost:8087/api/health
+```
+
+## Tai khoan demo development
+
+Seed development chi chay voi profile `dev`.
+
+Tai khoan quan tri phuong:
 
 ```text
-postman/HCMCYU.postman_collection.json
-postman/HCMCYU.postman_environment.json
+username: ward.secretary
+email: ward.secretary@hcmcyu.local
+password: `Demo@12345` neu dung gia tri dev mau trong README
+role: WARD_SECRETARY
 ```
 
-Select the `HCMCYU Local` environment. The environment uses:
+Dang nhap qua API:
 
-```text
-baseUrl=http://localhost:8080
-accessToken=
+```powershell
+curl.exe -X POST http://localhost:8080/api/auth/login `
+  -H "Content-Type: application/json" `
+  -d "{\"usernameOrEmail\":\"ward.secretary\",\"password\":\"Demo@12345\"}"
 ```
 
-Collection folders:
+Neu ban doi `DEV_WARD_SECRETARY_PASSWORD` trong `.env` va reset volume database, hay dung password moi khi login.
 
-- Auth
-- Members
-- Organizations
-- Events
-- Participation
-- Posts
-- Chat
-- Notifications
-- Payments
-- Admin
+Neu trinh duyet bao `Network Error` khi login:
 
-The `Payments` folder intentionally contains only Banking QR profile APIs. HCMCYU does not include a payment service, payment transaction processing, or payment gateway integration.
+- Mo frontend bang `http://localhost:5173` hoac `http://127.0.0.1:5173`.
+- Gateway dev da allow CORS cho `localhost:*` va `127.0.0.1:*`.
+- Kiem tra gateway bang `curl.exe -fsS http://localhost:8080/api/health`.
 
-Recommended test flow:
+## Lenh van hanh Docker
 
-1. Run `Auth / Register` to create a public MEMBER account, or skip this step and use a seeded demo account.
-2. Run `Auth / Login`; its test script stores `accessToken` automatically in the active environment.
-3. Call any protected API. Requests go through `api-gateway` and use `Authorization: Bearer {{accessToken}}`.
+Xem log tat ca service:
 
-The collection also defines helper variables such as `memberId`, `organizationId`, `eventId`, `postId`, `conversationId`, and `notificationId` at collection scope.
-
-## Development Infrastructure
-
-Start MySQL:
-
-```bash
-docker compose up -d mysql
+```powershell
+docker compose logs -f
 ```
 
-# youth-union-management
+Xem log mot service:
+
+```powershell
+docker compose logs -f api-gateway
+docker compose logs -f auth-service
+docker compose logs -f member-service
+```
+
+Dung stack:
+
+```powershell
+docker compose down
+```
+
+Dung va xoa volume MySQL/storage de seed lai tu dau:
+
+```powershell
+docker compose down -v
+```
+
+Build lai rieng frontend:
+
+```powershell
+docker compose up --build -d frontend
+```
+
+Build lai mot backend service:
+
+```powershell
+docker compose up --build -d auth-service
+```
+
+## Luu y bao mat
+
+- Khong commit file `.env`.
+- `.env.example` chi la template, khong dung password/secret that.
+- QR Banking trong he thong chi la du lieu ho so ca nhan, khong co payment service va khong xu ly giao dich thanh toan.
+- Frontend chi an/hien UI theo role; backend van la noi enforce JWT, RBAC va organization scope.
+
+## Troubleshooting
+
+Neu port `3306` bi chiem:
+
+```env
+MYSQL_PORT=3307
+```
+
+Sau do chay lai:
+
+```powershell
+docker compose up --build -d
+```
+
+Neu Maven download trong Docker bi loi mang tam thoi, chay lai lenh build sau khi ket noi on dinh:
+
+```powershell
+docker compose up --build -d
+```
+
+Neu container khong healthy:
+
+```powershell
+docker compose ps
+docker compose logs --tail=200 <service-name>
+```
+
+Vi du:
+
+```powershell
+docker compose logs --tail=200 member-service
+```

@@ -1,0 +1,10 @@
+.git
+.vscode
+**/target
+**/*.log
+.env
+.env.*
+!.env.example
+storage
+docs
+postman
