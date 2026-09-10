@@ -33,6 +33,10 @@ auth:
     access-token-expiration-ms: ${AUTH_ACCESS_TOKEN_EXPIRATION_MS:900000}
     refresh-token-expiration-ms: ${AUTH_REFRESH_TOKEN_EXPIRATION_MS:604800000}
 
+services:
+  member:
+    url: ${MEMBER_SERVICE_URL:http://localhost:8082}
+
 ---
 spring:
   config:

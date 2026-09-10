@@ -276,6 +276,19 @@ class MemberManagementIntegrationTest {
     }
 
     @Test
+    void supportsRoleFilter() throws Exception {
+        mockMvc.perform(withWardSecretary(get("/api/members")
+                        .param("role", "WARD_SECRETARY")
+                        .param("page", "0")
+                        .param("size", "5")
+                        .param("sort", "fullName,asc")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(wardOfficer.getId()))
+                .andExpect(jsonPath("$.content[0].memberRole").value("WARD_SECRETARY"));
+    }
+
+    @Test
     void duplicateUserIdReturnsConflict() throws Exception {
         mockMvc.perform(withWardSecretary(post("/api/members"))
                         .contentType(MediaType.APPLICATION_JSON)

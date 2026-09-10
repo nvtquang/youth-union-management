@@ -1,6 +1,7 @@
 package com.hcmcyu.member.repository;
 
 import com.hcmcyu.member.entity.Member;
+import com.hcmcyu.member.entity.MemberRole;
 import com.hcmcyu.member.entity.MemberStatus;
 import com.hcmcyu.member.security.CurrentUser;
 import org.springframework.data.jpa.domain.Specification;
@@ -43,6 +44,15 @@ public final class MemberSpecifications {
         };
     }
 
+    public static Specification<Member> hasRole(MemberRole role) {
+        return (root, query, criteriaBuilder) -> {
+            if (role == null) {
+                return criteriaBuilder.conjunction();
+            }
+            return criteriaBuilder.equal(root.get("memberRole"), role);
+        };
+    }
+
     public static Specification<Member> withinScope(CurrentUser currentUser) {
         return (root, query, criteriaBuilder) -> {
             if (currentUser.hasWardScope()) {
@@ -58,4 +68,3 @@ public final class MemberSpecifications {
         };
     }
 }
-

@@ -45,13 +45,7 @@ public class PostScopeService {
     }
 
     private boolean canManage(CurrentUser currentUser, String organizationId, PostType type) {
-        if (currentUser.hasWardScope()) {
-            return true;
-        }
-        return currentUser.hasTdpScope()
-                && type == PostType.ACTIVITY_REPORT
-                && currentUser.tdpId() != null
-                && currentUser.tdpId().equals(organizationId);
+        return currentUser.hasWardScope();
     }
 
     private ContentServiceException outOfScope() {

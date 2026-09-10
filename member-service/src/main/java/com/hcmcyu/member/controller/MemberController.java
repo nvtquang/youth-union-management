@@ -6,6 +6,7 @@ import com.hcmcyu.member.dto.MemberProfileUpdateRequest;
 import com.hcmcyu.member.dto.MemberRequest;
 import com.hcmcyu.member.dto.MemberResponse;
 import com.hcmcyu.member.dto.MemberRoleUpdateRequest;
+import com.hcmcyu.member.entity.MemberRole;
 import com.hcmcyu.member.entity.MemberStatus;
 import com.hcmcyu.member.security.CurrentUser;
 import com.hcmcyu.member.service.MemberService;
@@ -57,10 +58,11 @@ public class MemberController {
             @RequestParam(name = "keyword", required = false) String keyword,
             @RequestParam(name = "organizationId", required = false) String organizationId,
             @RequestParam(name = "status", required = false) MemberStatus status,
+            @RequestParam(name = "role", required = false) MemberRole role,
             @PageableDefault(size = 20, sort = "fullName") Pageable pageable,
             @AuthenticationPrincipal CurrentUser currentUser
     ) {
-        return memberService.findAll(keyword, organizationId, status, pageable, currentUser);
+        return memberService.findAll(keyword, organizationId, status, role, pageable, currentUser);
     }
 
     @GetMapping("/me")

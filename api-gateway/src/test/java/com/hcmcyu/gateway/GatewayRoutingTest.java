@@ -130,6 +130,30 @@ class GatewayRoutingTest {
     }
 
     @Test
+    void routesPublicOrganizationListWithoutToken() throws InterruptedException {
+        MEMBER_SERVICE.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody("[{\"id\":\"tdp-1\",\"name\":\"Chi doan TDP 1\",\"type\":\"YOUTH_UNION_BRANCH\"}]"));
+
+        WebTestClient client = WebTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
+                .build();
+
+        client.get()
+                .uri("/api/organizations/public")
+                .header("X-User-Id", "forged-user")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$[0].id").isEqualTo("tdp-1");
+
+        RecordedRequest request = MEMBER_SERVICE.takeRequest();
+        assertThat(request.getPath()).isEqualTo("/api/organizations/public");
+        assertThat(request.getHeader("X-User-Id")).isNull();
+    }
+
+    @Test
     void gatewayRejectsProtectedRequestsWithoutToken() {
         WebTestClient client = WebTestClient.bindToServer()
                 .baseUrl("http://localhost:" + port)

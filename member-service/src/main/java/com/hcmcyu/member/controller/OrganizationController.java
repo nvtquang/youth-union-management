@@ -48,6 +48,12 @@ public class OrganizationController {
         return organizationService.findAll(currentUser);
     }
 
+    @GetMapping("/public")
+    @Operation(summary = "List public TDP branches", description = "Public read-only endpoint used by register form to choose a TDP.")
+    public List<OrganizationUnitResponse> findPublicBranches() {
+        return organizationService.findPublicBranches();
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get organization by id", description = "Enforces organization scope; TDP officers cannot access another TDP by id.")
     public OrganizationUnitResponse findById(

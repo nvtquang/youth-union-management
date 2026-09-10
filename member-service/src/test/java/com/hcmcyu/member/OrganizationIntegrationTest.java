@@ -87,6 +87,40 @@ class OrganizationIntegrationTest {
     }
 
     @Test
+    void publicOrganizationListReturnsActiveTdpBranchesForRegistration() throws Exception {
+        mockMvc.perform(get("/api/organizations/public"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[?(@.id == '%s')]".formatted(tdp1.getId())).exists())
+                .andExpect(jsonPath("$[?(@.id == '%s')]".formatted(tdp2.getId())).exists())
+                .andExpect(jsonPath("$[?(@.id == '%s')]".formatted(ward.getId())).doesNotExist());
+    }
+
+    @Test
+    void internalRegisterCreatesMemberProfileInSelectedTdp() throws Exception {
+        MvcResult result = mockMvc.perform(post("/internal/members/register")
+                        .header("X-Internal-Secret", "dev-internal-secret")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of(
+                                "userId", "registered-user-1",
+                                "fullName", "Nguyen Van Dang Ky",
+                                "email", "registered@example.com",
+                                "phone", "0900000000",
+                                "organizationId", tdp1.getId()
+                        ))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.userId").value("registered-user-1"))
+                .andExpect(jsonPath("$.organizationId").value(tdp1.getId()))
+                .andReturn();
+
+        String memberId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+        var member = memberRepository.findById(memberId).orElseThrow();
+        assertThat(member.getUserId()).isEqualTo("registered-user-1");
+        assertThat(member.getOrganization().getId()).isEqualTo(tdp1.getId());
+        assertThat(member.getMemberRole().name()).isEqualTo("MEMBER");
+    }
+
+    @Test
     void tdpSecretaryCanOnlySeeWardAndOwnTdpInList() throws Exception {
         MvcResult result = mockMvc.perform(withTdpSecretary(get("/api/organizations"), tdp1.getId()))
                 .andExpect(status().isOk())

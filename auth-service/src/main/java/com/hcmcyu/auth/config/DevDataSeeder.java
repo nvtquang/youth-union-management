@@ -58,6 +58,14 @@ public class DevDataSeeder implements CommandLineRunner {
     private List<DemoUser> demoUsers() {
         List<DemoUser> users = new ArrayList<>();
         users.add(new DemoUser(
+                "user-admin",
+                "admin",
+                "admin@hcmcyu.local",
+                Role.WARD_SECRETARY,
+                "admin-member",
+                null
+        ));
+        users.add(new DemoUser(
                 "user-ward-secretary",
                 "ward.secretary",
                 "ward.secretary@hcmcyu.local",

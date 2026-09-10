@@ -73,6 +73,16 @@ public class DevDataSeeder implements CommandLineRunner {
 
     private void seedWardOfficers(OrganizationUnit defaultBranch) {
         seedMember(
+                "admin-member",
+                "user-admin",
+                "Quan Tri Vien He Thong",
+                "admin@hcmcyu.local",
+                defaultBranch,
+                MemberRole.WARD_SECRETARY,
+                Gender.MALE,
+                99
+        );
+        seedMember(
                 "ward-secretary-member",
                 "user-ward-secretary",
                 "Nguyen Van Bi Thu Phuong",

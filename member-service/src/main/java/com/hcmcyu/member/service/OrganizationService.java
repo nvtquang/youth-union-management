@@ -48,6 +48,16 @@ public class OrganizationService {
     }
 
     @Transactional(readOnly = true)
+    public List<OrganizationUnitResponse> findPublicBranches() {
+        return organizationUnitRepository.findByType(OrganizationUnitType.YOUTH_UNION_BRANCH)
+                .stream()
+                .filter(OrganizationUnit::isActive)
+                .sorted(Comparator.comparing(OrganizationUnit::getCode))
+                .map(organizationUnitMapper::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public OrganizationUnitResponse findById(String id, CurrentUser user) {
         OrganizationUnit organizationUnit = getOrganizationUnit(id);
         organizationScopeService.requireRead(user, organizationUnit);

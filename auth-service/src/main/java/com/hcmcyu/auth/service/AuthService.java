@@ -27,6 +27,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final UserMapper userMapper;
+    private final MemberRegistrationClient memberRegistrationClient;
 
     public AuthService(
             UserAccountRepository userAccountRepository,
@@ -34,7 +35,8 @@ public class AuthService {
             AuthenticationManager authenticationManager,
             JwtService jwtService,
             RefreshTokenService refreshTokenService,
-            UserMapper userMapper
+            UserMapper userMapper,
+            MemberRegistrationClient memberRegistrationClient
     ) {
         this.userAccountRepository = userAccountRepository;
         this.passwordEncoder = passwordEncoder;
@@ -42,6 +44,7 @@ public class AuthService {
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
         this.userMapper = userMapper;
+        this.memberRegistrationClient = memberRegistrationClient;
     }
 
     @Transactional
@@ -63,7 +66,18 @@ public class AuthService {
         user.setRole(Role.MEMBER);
         user.setEnabled(true);
 
-        UserAccount savedUser = userAccountRepository.save(user);
+        UserAccount savedUser = userAccountRepository.saveAndFlush(user);
+        var memberProfile = memberRegistrationClient.createMemberProfile(savedUser, request);
+        if (memberProfile == null || memberProfile.id() == null || memberProfile.organizationId() == null) {
+            throw new AuthException(
+                    HttpStatus.BAD_GATEWAY,
+                    "MEMBER_PROFILE_REGISTRATION_FAILED",
+                    "Could not create member profile"
+            );
+        }
+        savedUser.setMemberId(memberProfile.id());
+        savedUser.setOrganizationId(memberProfile.organizationId());
+        savedUser.setTdpId(memberProfile.organizationId());
         return buildAuthResponse(savedUser, refreshTokenService.createRefreshToken(savedUser));
     }
 
@@ -112,4 +126,3 @@ public class AuthService {
         return new AuthException(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Invalid username/email or password");
     }
 }
-

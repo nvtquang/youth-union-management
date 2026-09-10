@@ -143,9 +143,19 @@ Seed development chi chay voi profile `dev`.
 Tai khoan quan tri phuong:
 
 ```text
+username: admin
+email: admin@hcmcyu.local
+password: Demo@12345
+role: WARD_SECRETARY
+ghi chu: tai khoan quyen cao nhat dev, xem/sua/xoa toan bo doan vien va phan quyen role
+```
+
+Tai khoan bi thu phuong mau:
+
+```text
 username: ward.secretary
 email: ward.secretary@hcmcyu.local
-password: `Demo@12345` neu dung gia tri dev mau trong README
+password: Demo@12345
 role: WARD_SECRETARY
 ```
 
@@ -154,7 +164,7 @@ Dang nhap qua API:
 ```powershell
 curl.exe -X POST http://localhost:8080/api/auth/login `
   -H "Content-Type: application/json" `
-  -d "{\"usernameOrEmail\":\"ward.secretary\",\"password\":\"Demo@12345\"}"
+  -d "{\"usernameOrEmail\":\"admin\",\"password\":\"Demo@12345\"}"
 ```
 
 Neu ban doi `DEV_WARD_SECRETARY_PASSWORD` trong `.env` va reset volume database, hay dung password moi khi login.

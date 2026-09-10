@@ -89,6 +89,7 @@ public class JwtIdentityGatewayFilter implements GlobalFilter, Ordered {
                 || path.equals("/api/auth/register")
                 || path.equals("/api/auth/login")
                 || path.equals("/api/auth/refresh")
+                || path.equals("/api/organizations/public")
                 || path.startsWith("/ws/chat");
     }
 }

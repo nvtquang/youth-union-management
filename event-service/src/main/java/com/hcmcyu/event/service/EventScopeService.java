@@ -28,12 +28,7 @@ public class EventScopeService {
     }
 
     public boolean canWrite(CurrentUser currentUser, String organizationId) {
-        if (currentUser.hasWardScope()) {
-            return true;
-        }
-        return currentUser.hasTdpScope()
-                && currentUser.tdpId() != null
-                && currentUser.tdpId().equals(organizationId);
+        return currentUser.hasWardScope();
     }
 
     private boolean canRead(CurrentUser currentUser, Event event) {

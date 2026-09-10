@@ -65,6 +65,7 @@ public class MemberService {
             String keyword,
             String organizationId,
             MemberStatus status,
+            MemberRole role,
             Pageable pageable,
             CurrentUser currentUser
     ) {
@@ -72,7 +73,8 @@ public class MemberService {
                 .where(MemberSpecifications.withinScope(currentUser))
                 .and(MemberSpecifications.keywordContains(keyword))
                 .and(MemberSpecifications.hasOrganization(organizationId))
-                .and(MemberSpecifications.hasStatus(status));
+                .and(MemberSpecifications.hasStatus(status))
+                .and(MemberSpecifications.hasRole(role));
 
         return memberRepository.findAll(specification, pageable)
                 .map(memberMapper::toResponse);

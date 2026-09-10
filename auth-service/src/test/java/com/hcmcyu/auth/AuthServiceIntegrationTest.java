@@ -13,6 +13,8 @@ import com.hcmcyu.auth.entity.UserAccount;
 import com.hcmcyu.auth.repository.RefreshTokenRepository;
 import com.hcmcyu.auth.repository.UserAccountRepository;
 import com.hcmcyu.auth.service.JwtService;
+import com.hcmcyu.auth.service.MemberRegistrationClient;
+import com.hcmcyu.auth.dto.MemberRegistrationResponse;
 import java.time.Instant;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,12 +22,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -59,10 +65,22 @@ class AuthServiceIntegrationTest {
     @Autowired
     private JwtService jwtService;
 
+    @MockBean
+    private MemberRegistrationClient memberRegistrationClient;
+
     @BeforeEach
     void cleanDatabase() {
         refreshTokenRepository.deleteAll();
         userAccountRepository.deleteAll();
+        when(memberRegistrationClient.createMemberProfile(any(), any()))
+                .thenReturn(new MemberRegistrationResponse(
+                        "member-registered",
+                        "user-registered",
+                        "Registered Member",
+                        "member01@example.com",
+                        "tdp-1",
+                        "Chi đoàn TDP 1"
+                ));
     }
 
     @Test
@@ -71,8 +89,10 @@ class AuthServiceIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(Map.of(
                                 "username", "member01",
+                                "fullName", "Nguyen Van A",
                                 "email", "member01@example.com",
-                                "password", "Password123!"
+                                "password", "Password123!",
+                                "organizationId", "tdp-1"
                         ))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
@@ -81,6 +101,9 @@ class AuthServiceIntegrationTest {
 
         UserAccount user = userAccountRepository.findByUsername("member01").orElseThrow();
         assertThat(user.getRole()).isEqualTo(Role.MEMBER);
+        assertThat(user.getMemberId()).isEqualTo("member-registered");
+        assertThat(user.getOrganizationId()).isEqualTo("tdp-1");
+        assertThat(user.getTdpId()).isEqualTo("tdp-1");
     }
 
     @Test
@@ -89,8 +112,10 @@ class AuthServiceIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(Map.of(
                                 "username", "member01",
+                                "fullName", "Nguyen Van A",
                                 "email", "member01@example.com",
                                 "password", "Password123!",
+                                "organizationId", "tdp-1",
                                 "role", "WARD_SECRETARY"
                         ))))
                 .andExpect(status().isCreated())
@@ -108,8 +133,10 @@ class AuthServiceIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(Map.of(
                                 "username", "member02",
+                                "fullName", "Nguyen Van B",
                                 "email", "same@example.com",
-                                "password", "Password123!"
+                                "password", "Password123!",
+                                "organizationId", "tdp-1"
                         ))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("DUPLICATE_EMAIL"));
@@ -123,8 +150,10 @@ class AuthServiceIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(Map.of(
                                 "username", "member01",
+                                "fullName", "Nguyen Van B",
                                 "email", "member02@example.com",
-                                "password", "Password123!"
+                                "password", "Password123!",
+                                "organizationId", "tdp-1"
                         ))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("DUPLICATE_USERNAME"));
@@ -178,7 +207,9 @@ class AuthServiceIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("member01"))
                 .andExpect(jsonPath("$.email").value("member01@example.com"))
-                .andExpect(jsonPath("$.role").value("MEMBER"));
+                .andExpect(jsonPath("$.role").value("MEMBER"))
+                .andExpect(jsonPath("$.memberId").value("member-registered"))
+                .andExpect(jsonPath("$.tdpId").value("tdp-1"));
     }
 
     @Test
@@ -231,8 +262,10 @@ class AuthServiceIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(Map.of(
                                 "username", username,
+                                "fullName", "Nguyen Van A",
                                 "email", email,
-                                "password", password
+                                "password", password,
+                                "organizationId", "tdp-1"
                         ))))
                 .andExpect(status().isCreated())
                 .andReturn();

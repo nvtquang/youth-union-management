@@ -107,21 +107,22 @@ class PostIntegrationTest {
     }
 
     @Test
-    void tdpSecretaryCanManageActivityReportInOwnTdpOnly() throws Exception {
-        MvcResult result = mockMvc.perform(withTdpSecretary(post("/api/posts"), TDP_1_ID)
+    void tdpSecretaryCannotManageActivityReportInOwnTdp() throws Exception {
+        mockMvc.perform(withTdpSecretary(post("/api/posts"), TDP_1_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(postPayload("Bao cao moi TDP 1", PostType.ACTIVITY_REPORT, TDP_1_ID, PostStatus.PUBLISHED))))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.organizationId").value(TDP_1_ID))
-                .andReturn();
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("OUT_OF_SCOPE"));
 
-        String postId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
-
-        mockMvc.perform(withTdpSecretary(put("/api/posts/{id}", postId), TDP_1_ID)
+        mockMvc.perform(withTdpSecretary(put("/api/posts/{id}", tdp1Post.getId()), TDP_1_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(postPayload("Bao cao moi TDP 1 updated", PostType.ACTIVITY_REPORT, TDP_1_ID, PostStatus.PUBLISHED))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Bao cao moi TDP 1 updated"));
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("OUT_OF_SCOPE"));
+
+        mockMvc.perform(withTdpSecretary(delete("/api/posts/{id}", tdp1Post.getId()), TDP_1_ID))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("OUT_OF_SCOPE"));
     }
 
     @Test
@@ -185,9 +186,9 @@ class PostIntegrationTest {
         MockMultipartFile image1 = new MockMultipartFile("files", "report-1.png", "image/png", new byte[] {1, 2});
         MockMultipartFile image2 = new MockMultipartFile("files", "report-2.webp", "image/webp", new byte[] {3, 4});
 
-        mockMvc.perform(withTdpSecretary(multipart("/api/posts/{id}/images", tdp1Post.getId())
+        mockMvc.perform(withWardSecretary(multipart("/api/posts/{id}/images", tdp1Post.getId())
                         .file(image1)
-                        .file(image2), TDP_1_ID))
+                        .file(image2)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.images.length()").value(2))
                 .andExpect(jsonPath("$.images[0].id").isNotEmpty())
@@ -202,7 +203,7 @@ class PostIntegrationTest {
         assertThat(Files.exists(POST_IMAGE_STORAGE_PATH.resolve(storedFilename))).isTrue();
 
         String imageId = firstImage.getId();
-        mockMvc.perform(withTdpSecretary(delete("/api/posts/{id}/images/{imageId}", tdp1Post.getId(), imageId), TDP_1_ID))
+        mockMvc.perform(withWardSecretary(delete("/api/posts/{id}/images/{imageId}", tdp1Post.getId(), imageId)))
                 .andExpect(status().isNoContent());
 
         assertThat(postImageRepository.findById(imageId)).isEmpty();
@@ -213,15 +214,15 @@ class PostIntegrationTest {
     void uploadImageValidatesFileTypeAndSize() throws Exception {
         MockMultipartFile wrongType = new MockMultipartFile("files", "note.txt", "text/plain", new byte[] {1});
 
-        mockMvc.perform(withTdpSecretary(multipart("/api/posts/{id}/images", tdp1Post.getId())
-                        .file(wrongType), TDP_1_ID))
+        mockMvc.perform(withWardSecretary(multipart("/api/posts/{id}/images", tdp1Post.getId())
+                        .file(wrongType)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_POST_IMAGE_FILE"));
 
         MockMultipartFile tooLarge = new MockMultipartFile("files", "large.png", "image/png", new byte[17]);
 
-        mockMvc.perform(withTdpSecretary(multipart("/api/posts/{id}/images", tdp1Post.getId())
-                        .file(tooLarge), TDP_1_ID))
+        mockMvc.perform(withWardSecretary(multipart("/api/posts/{id}/images", tdp1Post.getId())
+                        .file(tooLarge)))
                 .andExpect(status().isPayloadTooLarge())
                 .andExpect(jsonPath("$.code").value("POST_IMAGE_TOO_LARGE"));
     }
