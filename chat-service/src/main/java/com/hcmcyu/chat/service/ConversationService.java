@@ -13,6 +13,7 @@ import com.hcmcyu.chat.repository.ConversationRepository;
 import com.hcmcyu.chat.security.CurrentUser;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -26,17 +27,20 @@ public class ConversationService {
     private final ConversationMemberRepository conversationMemberRepository;
     private final ChatAuthorizationService authorizationService;
     private final ChatMapper chatMapper;
+    private final MemberDirectoryClient memberDirectoryClient;
 
     public ConversationService(
             ConversationRepository conversationRepository,
             ConversationMemberRepository conversationMemberRepository,
             ChatAuthorizationService authorizationService,
-            ChatMapper chatMapper
+            ChatMapper chatMapper,
+            MemberDirectoryClient memberDirectoryClient
     ) {
         this.conversationRepository = conversationRepository;
         this.conversationMemberRepository = conversationMemberRepository;
         this.authorizationService = authorizationService;
         this.chatMapper = chatMapper;
+        this.memberDirectoryClient = memberDirectoryClient;
     }
 
     @Transactional
@@ -52,7 +56,7 @@ public class ConversationService {
         conversation.setCreatedBy(currentMemberId);
         memberIds.forEach(memberId -> addMemberEntity(conversation, memberId));
 
-        return chatMapper.toResponse(conversationRepository.saveAndFlush(conversation));
+        return toResponse(conversationRepository.saveAndFlush(conversation));
     }
 
     @Transactional(readOnly = true)
@@ -62,14 +66,14 @@ public class ConversationService {
                 .stream()
                 .map(ConversationMember::getConversation)
                 .map(conversation -> conversationRepository.findByIdWithMembers(conversation.getId()).orElseThrow())
-                .map(chatMapper::toResponse)
+                .map(this::toResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public ConversationResponse findById(String id, CurrentUser currentUser) {
         authorizationService.requireConversationMember(id, currentUser);
-        return chatMapper.toResponse(getConversationWithMembers(id));
+        return toResponse(getConversationWithMembers(id));
     }
 
     @Transactional
@@ -88,14 +92,14 @@ public class ConversationService {
             );
         }
         if (conversationMemberRepository.existsByConversation_IdAndMemberId(conversationId, request.memberId())) {
-            return chatMapper.toResponse(conversation);
+            return toResponse(conversation);
         }
 
         addMemberEntity(conversation, request.memberId());
         try {
-            return chatMapper.toResponse(conversationRepository.saveAndFlush(conversation));
+            return toResponse(conversationRepository.saveAndFlush(conversation));
         } catch (DataIntegrityViolationException exception) {
-            return chatMapper.toResponse(getConversationWithMembers(conversationId));
+            return toResponse(getConversationWithMembers(conversationId));
         }
     }
 
@@ -126,6 +130,13 @@ public class ConversationService {
                         "CONVERSATION_NOT_FOUND",
                         "Conversation not found"
                 ));
+    }
+
+    private ConversationResponse toResponse(Conversation conversation) {
+        Map<String, String> memberNames = memberDirectoryClient.findDisplayNames(conversation.getMembers().stream()
+                .map(ConversationMember::getMemberId)
+                .toList());
+        return chatMapper.toResponse(conversation, memberNames);
     }
 
     private void validateConversationMembers(ConversationType type, Set<String> memberIds) {

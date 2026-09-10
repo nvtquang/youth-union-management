@@ -23,6 +23,11 @@ auth:
   jwt:
     secret: ${JWT_SECRET:dev-hcmcyu-chat-service-secret-key-change-me-please-32}
 
+services:
+  member:
+    url: ${MEMBER_SERVICE_URL:http://localhost:8082}
+    internal-secret: ${AUTH_INTERNAL_SECRET:dev-internal-secret}
+
 management:
   endpoints:
     web:

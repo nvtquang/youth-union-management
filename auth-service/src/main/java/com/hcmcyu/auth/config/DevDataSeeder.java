@@ -37,15 +37,16 @@ public class DevDataSeeder implements CommandLineRunner {
     }
 
     private void seedUser(DemoUser demoUser) {
-        if (userAccountRepository.existsByUsername(demoUser.username())
-                || userAccountRepository.existsByEmail(demoUser.email())) {
-            return;
-        }
+        UserAccount user = userAccountRepository.findByUsername(demoUser.username())
+                .or(() -> userAccountRepository.findByEmail(demoUser.email()))
+                .orElseGet(() -> {
+                    UserAccount account = new UserAccount();
+                    account.setId(demoUser.userId());
+                    account.setUsername(demoUser.username());
+                    account.setEmail(demoUser.email());
+                    return account;
+                });
 
-        UserAccount user = new UserAccount();
-        user.setId(demoUser.userId());
-        user.setUsername(demoUser.username());
-        user.setEmail(demoUser.email());
         user.setPasswordHash(passwordEncoder.encode(demoPassword));
         user.setRole(demoUser.role());
         user.setMemberId(demoUser.memberId());

@@ -2,6 +2,7 @@ package com.hcmcyu.member.service;
 
 import com.hcmcyu.member.dto.MemberBankingRequest;
 import com.hcmcyu.member.dto.MemberBankingResponse;
+import com.hcmcyu.member.dto.MemberDirectoryResponse;
 import com.hcmcyu.member.dto.MemberProfileUpdateRequest;
 import com.hcmcyu.member.dto.MemberRequest;
 import com.hcmcyu.member.dto.MemberResponse;
@@ -78,6 +79,20 @@ public class MemberService {
 
         return memberRepository.findAll(specification, pageable)
                 .map(memberMapper::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<MemberDirectoryResponse> findDirectory(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.trim().length() < 2) {
+            return Page.empty(pageable);
+        }
+
+        Specification<Member> specification = Specification
+                .where(MemberSpecifications.keywordContains(keyword))
+                .and(MemberSpecifications.hasStatus(MemberStatus.ACTIVE));
+
+        return memberRepository.findAll(specification, pageable)
+                .map(memberMapper::toDirectoryResponse);
     }
 
     @Transactional(readOnly = true)

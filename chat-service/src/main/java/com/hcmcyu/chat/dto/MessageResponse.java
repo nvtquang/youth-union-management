@@ -6,6 +6,7 @@ public record MessageResponse(
         String id,
         String conversationId,
         String senderId,
+        String senderName,
         String content,
         LocalDateTime createdAt
 ) {

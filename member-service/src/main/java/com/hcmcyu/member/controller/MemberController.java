@@ -2,6 +2,7 @@ package com.hcmcyu.member.controller;
 
 import com.hcmcyu.member.dto.MemberBankingRequest;
 import com.hcmcyu.member.dto.MemberBankingResponse;
+import com.hcmcyu.member.dto.MemberDirectoryResponse;
 import com.hcmcyu.member.dto.MemberProfileUpdateRequest;
 import com.hcmcyu.member.dto.MemberRequest;
 import com.hcmcyu.member.dto.MemberResponse;
@@ -63,6 +64,15 @@ public class MemberController {
             @AuthenticationPrincipal CurrentUser currentUser
     ) {
         return memberService.findAll(keyword, organizationId, status, role, pageable, currentUser);
+    }
+
+    @GetMapping("/directory")
+    @Operation(summary = "Search member directory", description = "Authenticated lightweight directory for chat member picking. Returns only id, name, organization, and avatar; banking/QR and sensitive profile fields are never included.")
+    public Page<MemberDirectoryResponse> directory(
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @PageableDefault(size = 10, sort = "fullName") Pageable pageable
+    ) {
+        return memberService.findDirectory(keyword, pageable);
     }
 
     @GetMapping("/me")

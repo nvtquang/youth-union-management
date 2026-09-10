@@ -47,6 +47,14 @@ spring:
           uri: ${MEMBER_SERVICE_URL:http://localhost:8082}
           predicates:
             - Path=/api/members/**
+        - id: member-service-avatar-assets
+          uri: ${MEMBER_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/uploads/avatars/**
+        - id: member-service-bank-qr-assets
+          uri: ${MEMBER_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/uploads/bank-qr/**
         - id: member-service-organizations-health
           uri: ${MEMBER_SERVICE_URL:http://localhost:8082}
           predicates:

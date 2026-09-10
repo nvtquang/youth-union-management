@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -123,6 +124,36 @@ class MemberProfileIntegrationTest {
     }
 
     @Test
+    void allRolesCanUpdateOwnPersonalProfile() throws Exception {
+        Map<MemberRole, OrganizationUnit> organizationsByRole = Map.of(
+                MemberRole.WARD_SECRETARY, tdp1,
+                MemberRole.WARD_DEPUTY_SECRETARY, tdp1,
+                MemberRole.TDP_SECRETARY, tdp1,
+                MemberRole.TDP_DEPUTY_SECRETARY, tdp1,
+                MemberRole.MEMBER, tdp1
+        );
+
+        for (MemberRole role : MemberRole.values()) {
+            Member roleMember = saveMember("Profile " + role.name(), "profile-" + role.name(), organizationsByRole.get(role), role);
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("fullName", "Updated " + role.name());
+            payload.put("dateOfBirth", "2004-04-15");
+            payload.put("gender", "MALE");
+            payload.put("phone", "0912345678");
+            payload.put("email", role.name().toLowerCase() + "@example.com");
+            payload.put("address", "Thuong Cat updated");
+
+            mockMvc.perform(withUser(put("/api/members/me"), roleMember, role)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json(payload)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(roleMember.getId()))
+                    .andExpect(jsonPath("$.fullName").value("Updated " + role.name()))
+                    .andExpect(jsonPath("$.memberRole").value(role.name()));
+        }
+    }
+
+    @Test
     void memberCanUploadAndDeleteAvatar() throws Exception {
         MockMultipartFile avatar = new MockMultipartFile(
                 "file",
@@ -140,6 +171,10 @@ class MemberProfileIntegrationTest {
         String storedFilename = withAvatar.getAvatarUrl().substring("/uploads/avatars/".length());
         assertThat(storedFilename).doesNotContain("avatar.png");
         assertThat(Files.exists(AVATAR_STORAGE_PATH.resolve(storedFilename))).isTrue();
+
+        mockMvc.perform(get(withAvatar.getAvatarUrl()))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes(new byte[] {1, 2, 3, 4}));
 
         mockMvc.perform(withMember(delete("/api/members/me/avatar")))
                 .andExpect(status().isNoContent());
@@ -215,12 +250,16 @@ class MemberProfileIntegrationTest {
     }
 
     private Member saveMember(String fullName, String userId, OrganizationUnit organization) {
+        return saveMember(fullName, userId, organization, MemberRole.MEMBER);
+    }
+
+    private Member saveMember(String fullName, String userId, OrganizationUnit organization, MemberRole role) {
         Member member = new Member();
         member.setFullName(fullName);
         member.setUserId(userId);
         member.setEmail(userId + "@example.com");
         member.setMemberStatus(MemberStatus.ACTIVE);
-        member.setMemberRole(MemberRole.MEMBER);
+        member.setMemberRole(role);
         member.setYouthUnionJoinDate(LocalDate.of(2022, 3, 26));
         member.setOrganization(organization);
         return memberRepository.save(member);
@@ -233,6 +272,19 @@ class MemberProfileIntegrationTest {
                 .header("X-User-Role", "MEMBER")
                 .header("X-Organization-Id", ward.getId())
                 .header("X-Tdp-Id", tdp1.getId());
+    }
+
+    private MockHttpServletRequestBuilder withUser(
+            MockHttpServletRequestBuilder request,
+            Member member,
+            MemberRole role
+    ) {
+        return request
+                .header("X-User-Id", member.getUserId())
+                .header("X-Member-Id", member.getId())
+                .header("X-User-Role", role.name())
+                .header("X-Organization-Id", ward.getId())
+                .header("X-Tdp-Id", role.isWardOfficer() ? "" : member.getOrganization().getId());
     }
 
     private String json(Object value) throws Exception {

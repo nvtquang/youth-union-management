@@ -9,6 +9,8 @@ import com.hcmcyu.chat.mapper.ChatMapper;
 import com.hcmcyu.chat.repository.ConversationRepository;
 import com.hcmcyu.chat.repository.MessageRepository;
 import com.hcmcyu.chat.security.CurrentUser;
+import java.util.List;
+import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -22,23 +24,30 @@ public class MessageService {
     private final MessageRepository messageRepository;
     private final ChatAuthorizationService authorizationService;
     private final ChatMapper chatMapper;
+    private final MemberDirectoryClient memberDirectoryClient;
 
     public MessageService(
             ConversationRepository conversationRepository,
             MessageRepository messageRepository,
             ChatAuthorizationService authorizationService,
-            ChatMapper chatMapper
+            ChatMapper chatMapper,
+            MemberDirectoryClient memberDirectoryClient
     ) {
         this.conversationRepository = conversationRepository;
         this.messageRepository = messageRepository;
         this.authorizationService = authorizationService;
         this.chatMapper = chatMapper;
+        this.memberDirectoryClient = memberDirectoryClient;
     }
 
     @Transactional(readOnly = true)
     public Page<MessageResponse> findMessages(String conversationId, Pageable pageable, CurrentUser currentUser) {
         authorizationService.requireConversationMember(conversationId, currentUser);
-        return messageRepository.findByConversation_Id(conversationId, pageable).map(chatMapper::toResponse);
+        Page<Message> messages = messageRepository.findByConversation_Id(conversationId, pageable);
+        Map<String, String> senderNames = memberDirectoryClient.findDisplayNames(messages.getContent().stream()
+                .map(Message::getSenderId)
+                .toList());
+        return messages.map(message -> chatMapper.toResponse(message, senderNames.get(message.getSenderId())));
     }
 
     @Transactional
@@ -57,7 +66,9 @@ public class MessageService {
         message.setConversation(conversation);
         message.setSenderId(senderId);
         message.setContent(content);
-        return chatMapper.toResponse(messageRepository.save(message));
+        Message saved = messageRepository.save(message);
+        Map<String, String> senderNames = memberDirectoryClient.findDisplayNames(List.of(senderId));
+        return chatMapper.toResponse(saved, senderNames.get(senderId));
     }
 
     private String validateContent(ChatMessageRequest request) {

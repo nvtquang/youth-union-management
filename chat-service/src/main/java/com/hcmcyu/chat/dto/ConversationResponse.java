@@ -3,6 +3,7 @@ package com.hcmcyu.chat.dto;
 import com.hcmcyu.chat.entity.ConversationType;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 public record ConversationResponse(
         String id,
@@ -10,6 +11,7 @@ public record ConversationResponse(
         String title,
         String createdBy,
         List<String> memberIds,
+        Map<String, String> memberNames,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {

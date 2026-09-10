@@ -189,8 +189,12 @@ services:
       DB_USERNAME: ${DB_USERNAME:?DB_USERNAME is required}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET is required}
+      MEMBER_SERVICE_URL: http://member-service:8082
+      AUTH_INTERNAL_SECRET: ${AUTH_INTERNAL_SECRET:?AUTH_INTERNAL_SECRET is required}
     depends_on:
       mysql:
+        condition: service_healthy
+      member-service:
         condition: service_healthy
     ports:
       - "${CHAT_SERVICE_PORT:-8085}:8085"

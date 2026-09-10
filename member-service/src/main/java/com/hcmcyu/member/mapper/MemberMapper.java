@@ -1,5 +1,6 @@
 package com.hcmcyu.member.mapper;
 
+import com.hcmcyu.member.dto.MemberDirectoryResponse;
 import com.hcmcyu.member.dto.MemberResponse;
 import com.hcmcyu.member.entity.Member;
 import org.springframework.stereotype.Component;
@@ -25,6 +26,16 @@ public class MemberMapper {
                 member.getOrganization().getName(),
                 member.getCreatedAt(),
                 member.getUpdatedAt()
+        );
+    }
+
+    public MemberDirectoryResponse toDirectoryResponse(Member member) {
+        return new MemberDirectoryResponse(
+                member.getId(),
+                member.getFullName(),
+                member.getOrganization().getId(),
+                member.getOrganization().getName(),
+                member.getAvatarUrl()
         );
     }
 }

@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -104,6 +105,10 @@ class MemberBankingIntegrationTest {
         String storedFilename = updated.getBankQrImageUrl().substring("/uploads/bank-qr/".length());
         assertThat(storedFilename).doesNotContain("qr.png");
         assertThat(Files.exists(BANK_QR_STORAGE_PATH.resolve(storedFilename))).isTrue();
+
+        mockMvc.perform(get(updated.getBankQrImageUrl()))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes(new byte[] {1, 2, 3, 4}));
     }
 
     @Test
